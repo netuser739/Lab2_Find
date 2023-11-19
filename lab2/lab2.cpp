@@ -1,111 +1,157 @@
 #include <iostream>
+#include <random>
+#include <algorithm>
+#include <chrono>
+#include <windows.h>
 
 using namespace std;
 
-void RandomArray(int* array, int size, int minValue, int maxValue) {
-    for (int i = 0; i < size; i++) {
-        array[i] = (double)rand() / RAND_MAX * (maxValue - minValue) + minValue;
-    }
+//функция удалления массва
+void deleteArr(int* arr) {
+    delete arr;
 }
 
-void LowToUpArray(int* array, int size, int minValue, int maxValue) {
-    if (size >= (maxValue - minValue + 1)) {
-        for (int i = 0; i < size; i++) {
-            array[i] = minValue;
-            if (minValue < maxValue)
-                minValue++;
+//функция линейного поиска
+int Better_Linear_Search(const int array[], int size, int target, int& comparisons) {
+    comparisons = 0;
+    for (int i = 0; i < size; ++i) {
+        ++comparisons; // увеличение счетчика при каждом сравнении ключа с элементом массива
+        if (array[i] == target) {
+            return i; // вернуть индекс, если элемент найден
         }
+    }
+    return -1; // если элемент не найден
+}
+
+int Sentinel_Linear_Search(const int array[], int size, int target, int& comparisons) {
+
+    comparisons = 0;
+    int lastElement = array[size - 1];
+    // заменяем последний элемент массива на искомый элемент
+    int *arrayWithSentinel = new int[size];
+    copy(array, array + size, arrayWithSentinel);
+    arrayWithSentinel[size - 1] = target;
+
+    int i = 0;
+    while (arrayWithSentinel[i] != target) {
+        ++comparisons;
+        ++i;
+    }
+    //восстанавливаем последний элемент массива
+    arrayWithSentinel[size - 1] = lastElement;
+
+    if (i < size - 1 || array[size - 1] == target) {
+        return i; // Вернуть индекс, если элемент найден
     }
     else {
-        int left = minValue;
-        int right = maxValue - size + 1;
-        for (int i = 0; i < size; i++) {
-            array[i] = (double)rand() / RAND_MAX * (right - left) + left;
-            left = array[i] + 1;
-            right++;
-        }
+        return -1; // Вернуть -1, если элемент не найден
     }
+
+    deleteArr(arrayWithSentinel);
 }
 
-int BLS(int* array, int size, int key) {
-    int k = 0;
-    int kInd = 0;
-
-    for (int i = 0; i < size; i++) {
-        k++;
-        if (array[i] == key) {
-            cout << k << " - kol-vo cravneniy;\n";
-            return i;
-        }
-    }
-    cout << k << " - kol-vo cravneniy;\n";
-    return -1;
-}
-
-int SLS(int* array, int size, int key) {
-    int k = 0;
-
-    int last = array[size - 1];
-    array[size - 1] = key;
+// Функция линейного поиска в упорядоченном массиве
+int Ordered_Array_Search(const int array[], int size, int target, int& comparisons) {
+    comparisons = 0;
     int i = 0;
-
-    while (array[i] != key) {
-        k++;
-        i++;
-    }
-    array[size - 1] = last;
-
-    if (i < size - 1 || array[size - 1] == key) {
-        cout << k+1 << " - kol-vo cravneniy;\n";
-        return i;
+    while (i < size && array[i] < target) {
+        ++comparisons;
+        ++i;
     }
 
-    cout << k << " - kol-vo cravneniy";
-    return -1;
+    if (i < size && array[i] == target) {
+        return i; // Вернуть индекс, если элемент найден
+    }
+    else {
+        return -1; // Вернуть -1, если элемент не найден
+    }
 }
-
-int OAS(int* array, int size, int key) {
-    int last = array[size - 1];
-    array[size - 1] = INT_MAX;
-    int i = 0;
-    while (array[i] < key) {
-        i++;
-    }
-    array[size - 1] = last;
-    if (array[i] = key) {
-        return i;
-    }
-    if (array[size - 1] = key) {
-        return size - 1;
-    }
-
-    return -1;
-}
-
-int BS(int* array, int size, int key) {
+// Функция бинарного поиска в упорядоченном массиве
+int Binary_Search(const int array[], int size, int target, int& comparisons) {
+    comparisons = 0;
     int left = 0;
     int right = size - 1;
 
     while (left <= right) {
-        int mid = (left + right) / 2;
-        if (array[mid] == key) {
-            return mid;
+        ++comparisons;
+        int mid = left + (right - left) / 2;
+
+        if (array[mid] == target) {
+            return mid;  // Вернуть индекс, если элемент найден
+        }
+        else if (array[mid] < target) {
+            left = mid + 1;
         }
         else {
-            if (array[mid] < key) {
-                left = mid + 1;
-            }
-            else {
-                right = mid - 1;
-            }
+            right = mid - 1;
         }
     }
-    return -1;
+    return -1; // Вернуть -1, если элемент не найден
 }
 
-int main()
-{
-    const int size = 7;
-    int arr[size] = { 1, 5, 6, 9, 23, 45, 87};
-    cout << SLS(arr, size, 9);
+//функция для измерения времени поиска
+template<typename Search>
+pair<chrono::nanoseconds, int> measureSearchAndCountComparisons(Search searchFunction, const int array[], int size, int target) {
+    auto startTime = chrono::high_resolution_clock::now(); // Запоминаем время начала выполнения функции
+
+    int comparisons; // Переменная для хранения количества операций сравнения
+
+    int results = searchFunction(array, size, target, comparisons); // // Выполняем поиск и получаем количество операций сравнения
+
+    auto endTime = chrono::high_resolution_clock::now(); // Запоминаем время окончания выполнения функции
+    auto passedTime = chrono::duration_cast<chrono::nanoseconds>(endTime - startTime); // Вычисляем время выполнения в миллисекундах
+
+    return{ passedTime, comparisons };//вернуть пару значений: время выполнения и количество операций сравнения
+}
+
+int main() {
+    //инициализация генератора случайных чисел с использованием библиотеки random
+    random_device rd;// создание объекта случайных чисел
+    mt19937 gen(rd()); // создание случайных чисел с хорошим стат свойством и длинным периодом
+    uniform_int_distribution<int> distribution(1, 100);// создание диапазона от 1 до 100
+
+    const int maxSize = 200000;
+    const int step = 10000;
+
+    //итерация по различным  размерам массива
+    for (int size = step; size <= maxSize; size += step) {
+        int *array = new int[size]; // используем массив для хранения элементов
+
+
+        //Заполнения массива случайными числами и сортировка по неубыванию
+        for (int i = 0; i < size; ++i) {
+            array[i] = distribution(gen);
+        }
+        sort(array, array + size);
+
+        // Выбираем случайный элемент для поиска
+        int target = array[distribution(gen) % size];
+
+        // Измеряем время выполнения и подсчитываем операции сравнения для Better Linear Search
+        auto linearSearchResult = measureSearchAndCountComparisons(Better_Linear_Search, array, size, target);
+        cout << "Better Linear Search for size " << size << ": " << linearSearchResult.first.count() << " ns," <<
+            linearSearchResult.second << " comparisons" << std::endl;
+
+        // Измеряем время выполнения и подсчитываем операции сравнения для Sentinel Linear Search
+        auto sentinalSearchResult = measureSearchAndCountComparisons(Sentinel_Linear_Search, array, size, target);
+        cout << "Sentinel Linear Search for size " << size << ": "
+            << sentinalSearchResult.first.count() << " ns, "
+            << sentinalSearchResult.second << " comparisons" << endl;
+
+        // Измеряем время выполнения и подсчитываем операции сравнения для Binary Search
+        auto binarySearchResult = measureSearchAndCountComparisons(Binary_Search, array, size, target);
+        cout << "Binary Search for size " << size << ": "
+            << binarySearchResult.first.count() << " ns, " << binarySearchResult.second << " comparisons" << endl;
+
+        // Измеряем время выполнения и подсчитываем операции сравнения для Ordered Array Search
+        auto orderedSearchResult = measureSearchAndCountComparisons(Ordered_Array_Search, array, size, target);
+        cout << "Ordered Array Search for size " << size << ": " << orderedSearchResult.first.count() << " ns," <<
+            orderedSearchResult.second << " comparisons" << endl;
+
+        cout << endl;// Печатаем пустую строку для разделения результатов
+
+        deleteArr(array);
+    }
+
+    return 0;
 }
