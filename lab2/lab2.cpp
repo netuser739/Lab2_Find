@@ -47,6 +47,9 @@ int Sentinel_Linear_Search(const int array[], int size, int target, int& compari
     else {
         return -1; // Вернуть -1, если элемент не найден
     }
+    else {
+        return -1; // Вернуть -1, если элемент не найден
+    }
 
     deleteArr(arrayWithSentinel);
 }
